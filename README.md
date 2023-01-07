@@ -12,7 +12,3 @@ DEBUG_TOOLBAR_PANELS = [
 ```
 
 DJDT_PYCHARM_PATH = '/path/to/pycharm-professional'
-
-## Limitations
-
-The plugin does not do code analysis. It just opens the target file and looks for a line like "def view_name(" or "class ViewClass(". But it works. In most cases :)
