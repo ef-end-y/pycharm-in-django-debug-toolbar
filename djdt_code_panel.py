@@ -29,13 +29,14 @@ def open_editor(request, url_id):
     for data in get_request_log():
         if url_id == data['id']:
             line, file = data['line'], data['file']
-            os.system(f'{settings.DJDT_PYCHARM_PATH} --line {line} {file}')
+            cmd = settings.DJDT_CODE_EDITOR_PATH.format(line=line, file=file)
+            os.system(cmd)
             return HttpResponse('<script>window.close()</script>')
     return HttpResponse('Not found')
 
 
-class PycharmUrlPanel(Panel):
-    title = 'Pycharm'
+class CodeEditorPanel(Panel):
+    title = 'CodeEditor'
     nav_subtitle = ''
 
     @staticmethod
@@ -64,6 +65,7 @@ class PycharmUrlPanel(Panel):
     def generate_stats(self, request, response):
         match = resolve(request.path)
         last_req_info = [f'Url name: <b>{match.url_name}</b>']
+
         func_path = match.func
         if hasattr(match.func, 'view_class'):
             func_name = match.func.__name__
@@ -76,7 +78,6 @@ class PycharmUrlPanel(Panel):
                 if not hasattr(func_path, '__wrapped__'):
                     break
                 func_path = func_path.__wrapped__
-
             func_name = match.func.__name__
             code = func_path.__code__
             line_no = getattr(code, 'co_firstlineno', 1)
@@ -84,6 +85,7 @@ class PycharmUrlPanel(Panel):
             if not isinstance(file, str) or not file.startswith('/'):
                 file = inspect.getabsfile(func_path)
             last_req_info.append(f'Func name: <b>{func_name}</b>')
+        
         last_req_info.append(f'File: <b>{file}</b>')
 
         request_log = get_request_log()
