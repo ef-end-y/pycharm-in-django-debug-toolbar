@@ -1,5 +1,5 @@
 ## Pycharm Panel for Django Debug Toolbar ##
-Adds a request history to [Django Debug Toolbar](https://github.com/django-debug-toolbar/django-debug-toolbar). For each request the plugin can run IDE to open the handler code file and put the cursor on the handler code first line. The plugin can also do this with ajax requests.
+Open http://your.site/path/to/somewhere in your Django project. Do you want to see what part of the code handles that url? One click and an editor will be opened with cursor at the right place. This is a plugin for [Django Debug Toolbar](https://github.com/django-debug-toolbar/django-debug-toolbar).
 
 ## Setup
 ```python
