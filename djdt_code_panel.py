@@ -12,32 +12,26 @@ from django.utils.crypto import get_random_string
 from django.utils.safestring import mark_safe
 
 from debug_toolbar.panels import Panel
+from debug_toolbar.toolbar import DebugToolbar
 from django.utils.timezone import now
 
 
-T_LOCAL = threading.local()
-T_LOCAL.djdt_request_log = []
-
-
-def get_request_log() -> list:
-    if not hasattr(T_LOCAL, 'djdt_request_log'):
-        T_LOCAL.djdt_request_log = []
-    return T_LOCAL.djdt_request_log
-
-
 def open_editor(request, url_id):
-    for data in get_request_log():
-        if url_id == data['id']:
-            line, file = data['line'], data['file']
-            cmd = settings.DJDT_CODE_EDITOR_PATH.format(line=line, file=file)
-            os.system(cmd)
-            return HttpResponse('<script>window.close()</script>')
+    for _, toolbar in DebugToolbar._store.items():
+        if data := toolbar.stats.get('CodeEditorPanel'):
+            data = data['data']
+            if url_id == data['id']:
+                line, file = data['line'], data['file']
+                cmd = settings.DJDT_CODE_EDITOR_PATH.format(line=line, file=file)
+                os.system(cmd)
+                return HttpResponse('<script>window.close()</script>')
     return HttpResponse('Not found')
 
 
 class CodeEditorPanel(Panel):
     title = 'CodeEditor'
     nav_subtitle = ''
+    is_async = True
 
     @staticmethod
     def _is_ajax(request):
@@ -54,12 +48,14 @@ class CodeEditorPanel(Panel):
         if self.has_content:
             stats = self.toolbar.stats.get(self.panel_id, {})
             message = stats.get('last_req_info', '') + '<br><br>'
-            for data in get_request_log():
-                message += data['date'].strftime('%H:%M:%S')
-                message += ' AJAX' if data['is_ajax'] else ''
-                message += ' ' + data['method']
-                href = reverse('djdt:open_editor', args=[data['id']])
-                message += f' <a href={href} target="_blank">{data["name"]}</a><br>'
+            for _, toolbar in reversed(DebugToolbar._store.items()):
+                if data := toolbar.stats.get('CodeEditorPanel'):
+                    data = data['data']
+                    message += data['date'].strftime('%H:%M:%S')
+                    message += ' AJAX' if data['is_ajax'] else ''
+                    message += ' ' + data['method']
+                    href = reverse('djdt:open_editor', args=[data['id']])
+                    message += f' <a href={href} target="_blank">{data["name"]}</a><br>'
             return mark_safe(message)
 
     def generate_stats(self, request, response):
@@ -68,11 +64,10 @@ class CodeEditorPanel(Panel):
 
         func_path = match.func
         if hasattr(match.func, 'view_class'):
-            func_name = match.func.__name__
-            class_ref = getattr(inspect.getmodule(match.func), func_name)
-            line_no = inspect.findsource(class_ref)[1] + 1
-            file = inspect.getfile(class_ref)
-            last_req_info.append(f'Class-based view: <b>{func_name}</b>')
+            view_class = match.func.view_class
+            line_no = inspect.findsource(view_class)[1] + 1
+            file = inspect.getfile(view_class)
+            last_req_info.append(f'Class-based view: <b>{view_class.__name__}</b>')
         else:
             for i in range(10):  # max n decorator nesting
                 if not hasattr(func_path, '__wrapped__'):
@@ -88,16 +83,15 @@ class CodeEditorPanel(Panel):
         
         last_req_info.append(f'File: <b>{file}</b>')
 
-        request_log = get_request_log()
-        request_log.insert(0, {
-            'id': get_random_string(length=12),
-            'date': now(),
-            'is_ajax': self._is_ajax(request),
-            'method': request.method,
-            'name': match.url_name,
-            'file': file,
-            'line': line_no,
+        self.record_stats({
+            'last_req_info': '<br>'.join(last_req_info),
+            'data': {
+                'id': get_random_string(length=12),
+                'date': now(),
+                'is_ajax': self._is_ajax(request),
+                'method': request.method,
+                'name': match.url_name,
+                'file': file,
+                'line': line_no,
+            }
         })
-        del request_log[30:]
-
-        self.record_stats({'last_req_info': '<br>'.join(last_req_info)})

@@ -4,11 +4,21 @@ Adds a request history to [Django Debug Toolbar](https://github.com/django-debug
 ## Setup
 ```python
 DEBUG_TOOLBAR_PANELS = [
-    '...',
-    '...',
-    '...',
+    # '...',
+    # '...',
+    # '...',
     'djdt_code_panel.CodeEditorPanel',
 ]
+```
+
+for example:
+```python
+DEBUG_TOOLBAR_PANELS = {
+    'debug_toolbar.panels.timer.TimerPanel',
+    'debug_toolbar.panels.sql.SQLPanel',
+    'debug_toolbar.panels.redirects.RedirectsPanel',
+    'djdt_code_panel.CodeEditorPanel',
+}
 ```
 
 path to your IDE:
