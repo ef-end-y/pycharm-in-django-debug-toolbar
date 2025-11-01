@@ -1,5 +1,5 @@
 ## Pycharm Panel for Django Debug Toolbar ##
-Open http://your.site/path/to/somewhere in your Django project. Do you want to see what part of the code handles that url? One click and an editor will be opened with cursor at the right place. This is a plugin for [Django Debug Toolbar](https://github.com/django-debug-toolbar/django-debug-toolbar).
+Run your Django project and open http://your.site/path/to/somewhere in a browser. Do you want to see what part of the code handles that url? One click and an editor will be opened with cursor at the right place. This is a plugin for [Django Debug Toolbar](https://github.com/django-debug-toolbar/django-debug-toolbar).
 
 ## Setup
 ```python
